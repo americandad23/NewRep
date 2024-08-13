@@ -1,0 +1,96 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Generate Artifacts
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build
+        run: npm run build  # Adjust this command based on your build script
+      
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: ./build  # Adjust the path to your build output directory
+
+  test:
+    name: Run Tests and Code Quality Checks
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run tests
+        run: npm test  # Adjust this command based on your test script
+        
+      - name: Run code quality checks
+        run: npm run lint  # Adjust this command based on your linting script
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: ./test-results  # Adjust path if you have test result files
+
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Upload Hello folder
+        uses: actions/upload-artifact@v3
+        with:
+          name: hello-folder
+          path: ./Hello  # Path to your Hello folder
+        
+      - name: Deploy to staging server
+        run: |
+          # Install FTP client
+          sudo apt-get install -y ftp
+
+          # Upload files using FTP
+          ftp -inv ${{ secrets.FTP_HOST }} <<EOF
+          user ${{ secrets.FTP_USERNAME }} ${{ secrets.FTP_PASSWORD }}
+          cd /path/to/staging
+          mput ./Hello/*
+          bye
+          EOF
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
