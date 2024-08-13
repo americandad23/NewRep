@@ -34,6 +34,12 @@ jobs:
           name: build
           path: ./build  # Adjust the path to your build output directory
 
+      - name: Archive HelloWorld folder
+        uses: actions/upload-artifact@v3
+        with:
+          name: helloworld-folder
+          path: ./HelloWorld  # Path to your HelloWorld folder
+
   test:
     name: Run Tests and Code Quality Checks
     runs-on: ubuntu-latest
@@ -72,11 +78,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         
-      - name: Upload Hello folder
+      - name: Upload HelloWorld folder
         uses: actions/upload-artifact@v3
         with:
-          name: hello-folder
-          path: ./Hello  # Path to your Hello folder
+          name: helloworld-folder
+          path: ./HelloWorld  # Path to your HelloWorld folder
         
       - name: Deploy to staging server
         run: |
@@ -87,7 +93,7 @@ jobs:
           ftp -inv ${{ secrets.FTP_HOST }} <<EOF
           user ${{ secrets.FTP_USERNAME }} ${{ secrets.FTP_PASSWORD }}
           cd /path/to/staging
-          mput ./Hello/*
+          mput ./HelloWorld/*
           bye
           EOF
         env:
